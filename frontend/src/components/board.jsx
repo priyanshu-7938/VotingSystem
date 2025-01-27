@@ -13,12 +13,18 @@ export default function Board(){
     console.log(votes);
     const [ param, setParam ] = React.useState("");
     const [ values, setValues ] = React.useState([]);
+    const [ logs, setLogs ] = React.useState([]);
     useEffect(()=>{
         setValues(votes.filter((vote) => {
             return vote.key.includes(param);
         }));
     },[param]);
-    // implement
+    const getProofs = async()=>{
+        const data = await axios.get("https://localhost:3443/prooflog").then(data => {
+            setLogs(data.data.logs);
+        }
+    )};
+    console.log(logs);
     return (
         <div>
         <h1>Board</h1>
@@ -39,11 +45,16 @@ export default function Board(){
             );
         })}
         </div>
-
-
-
-
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-3" >::Get Proof of Vote calculation::</button>
+        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-3" onClick={()=>{getProofs()}} >::Get Proof of Vote calculation::</button>
+        <div className="mt-3 flex flex-col gap-2 ">
+            <h1>Proof of Vote Calculation</h1>
+            <hr />
+        { logs && logs.map((log, index) => {
+            return(
+                <p>{log}</p>
+            )
+        })}
+        </div>
         </div>
     )
 }

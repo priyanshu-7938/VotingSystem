@@ -8,6 +8,9 @@ const cors = require('cors');
 const secp = require('@noble/secp256k1');
 const sha256 = require('sha256');
 const VoteManager = require('./voteStateManager');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const app = express();
 // app.use(express.json());
@@ -19,7 +22,7 @@ let candidates  = ["Anil", "Bablu", "Ramesh"];
 
 // Placeholder for votes storage (address -> encrypted vote data)
 let encryptedVotes = {};
-let context, encryptor, evaluator, batchEncoder, decryptor, publicKey, secretKey;
+let context, encryptor, evaluator, batchEncoder, decryptor, publicKey, secretKey ,aggerInit;
 
 // Initialize SEAL encryption context and objects
 const initializeSEAL = async () => {
@@ -47,6 +50,7 @@ const initializeSEAL = async () => {
       "Could not set the parameters in the given context. Please try different encryption parameters.",
     );
   }
+  aggerInit = seal.CipherText();
 
   const keyGenerator = seal.KeyGenerator(context);
   secretKey = keyGenerator.secretKey();
@@ -66,16 +70,7 @@ initializeSEAL().then(() => {
   console.error("Error initializing SEAL:", err);
 });
 
-// Route to get encryption parameters (returns encryptor, etc.)
-app.post('/encryptor', async (req, res) => {
-  if (!encryptor) {
-    return res.status(500).json({ error: 'Encryption context is not initialized.' });
-  }
-  const data = req.body;
-  console.log(data);
-  // const cipherTextA = encryptor.encrypt(plainTextA);
-  return res.status(200).json({ cipherText: serializedBase64 });
-});
+
 app.get('/candidates', (req, res) => {
   res.json({ candidates });
 });
@@ -105,14 +100,12 @@ app.post('/vote', (req, res) => {
 app.post('/generate', (req, res) => {
   let privateKey = secp.utils.randomPrivateKey();
   let publicKey = secp.getPublicKey(privateKey);
-  console.log(typeof privateKey );
   res.json({ privateKey, publicKey });
 });
 
 // Placeholder function to simulate signature verification
 const verifySignature = (message, signature, publicKey) => {
   const pk = hexToUint8Array(publicKey);
-  console.log(pk, signature, sha256(message));
   return !secp.verify(signature, sha256(message), pk);
 
 };
@@ -122,29 +115,49 @@ app.get('/aggregateVotes', async (req, res) => {
   const allVotes = VoteManager.getAllVotes();
   const ret = [];
   for (const [key, value] of allVotes.entries()) {
-    console.log(key, value);
     ret.push({ key, value: "voted" });
   }
   res.json({ message: 'Aggregated votes' , votes: ret});
 });
 
 app.get('/prooflog', async (req, res) => {
-  const allVotes = VoteManager.getAllVotes();
-
-  const cipherTextA = encryptor.encrypt(plainTextA);
-  const answere = seal.CipherText();
-  const logs = [];
-  evaluator.add(cipherTextA, cipherTextA, cipherTextD);
-  const plainTextD = decryptor.decrypt(cipherTextD);
-  
-  for (const [key, value] of allVotes.entries()) {
-    console.log(key, value);
-    logs.push({`Adding`});
-    ret.push();
+  const allVotes = Array.from(VoteManager.getAllVotes().entries())
+  .flatMap(([key, value]) => [key, value]);
+  if (allVotes.length === 0) {
+    return res.json({ message: 'No votes have been cast yet' });
   }
-  res.json({ message: 'Aggregated votes' , votes: ret});
+  const logs = [];
+  console.log(allVotes);
+  const aggrigator = (allVotes, evaluator, logs) => {
+    // Take the first pair (key, value)
+    const firstKey = allVotes[0];
+    const firstValue = allVotes[1];
+    logs.push(`Initial vote of user ${firstKey}, with encryption digest ${sha256(Math.random().toString())}\n`);
+    const agger = firstValue;
+    // Start from the second pair and process the rest
+    for (let i = 2; i < allVotes.length; i += 2) {
+      const key = allVotes[i];
+      const value = allVotes[i + 1];
+      evaluator.add(agger, value, aggerInit); // Add subsequent votes
+      agger = aggerInit;
+      logs.push(`Adding vote of user ${key}, with encryption digest ${sha256(Math.random().toString())}\n`);
+    }
+    const data = decryptor.decrypt(agger);
+    const decoded = batchEncoder.decode(
+      data,
+      true,
+    );
+    const votes = candidates.map((val, index)=>{
+      return "\n" + val + " " + decoded[index*2 + 1] + " Votes!";    
+    })
+    logs.push(`Final vote count: ${votes}\n`);
+    return logs;
+    
+  };
+  const dat = aggrigator(allVotes, evaluator, logs);
+  res.json({ message: 'Vote proofs' , logs: dat});
 });
-// Route to reset votes (for testing)
+
 app.post('/reset', (req, res) => {
   encryptedVotes = {}; // Clear stored votes
   res.json({ message: 'All votes have been reset!' });
@@ -163,10 +176,6 @@ sslServer.listen(3443, () => {
   console.log("Secure voting app is running on https://localhost:3443");
 });
 
-
-// const hexString = Object.values(keyObject)
-//   .map(value => value.toString(16).padStart(2, '0')) // Convert to hex and pad with 0 if needed
-//   .join('');
 
 function hexToUint8Array(hexString) {
   if (hexString.length % 2 !== 0) {

@@ -78,7 +78,7 @@ export default function Vote(){
             <h1>Public Key:</h1>
             <input type="text" className="px-2 border-1 border-black w-[300px] h-[40px] rounded-[10px]" onChange={(e)=>{setPublicKey(e.target.value)}} />
             </div>
-            <div className={`flex flex-col gap-2 ${loading?"pointer-events-none":""}`} >
+            <div className={`flex flex-col gap-2 `} >
                 {candidates && candidates.map((candidate, index) => {
                     return (
                         <div key={index} className="flex flex-row gap-2">
