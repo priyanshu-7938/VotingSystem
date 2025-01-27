@@ -10,6 +10,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.21.2"
+    "@noble/secp256k1": "^2.2.3",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "elgamal": "^0.3.0",
+    "express": "^4.21.2",
+    "i": "^0.3.7",
+    "node-seal": "^5.1.4",
+    "npm": "^11.0.0",
+    "sha256": "^0.2.0",
+    "threshold-elgamal": "^0.1.34"
   }
 }
