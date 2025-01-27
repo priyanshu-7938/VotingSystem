@@ -20,7 +20,7 @@ export default function Vote(){
         return pkey;
     }
     useEffect(() => {
-        axios("https://localhost:3443/candidates").then(data => {
+        axios(import.meta.env.VITE_APP_BACKEND_AGG+"/candidates").then(data => {
             console.log(data.data);
             setData(data.data.candidates);
         });
@@ -59,7 +59,7 @@ export default function Vote(){
             typeof value === "bigint" ? value.toString() : value
           );
           console.log(serializedSignature);
-        const reso = await axios.post("https://localhost:3443/vote", {
+        const reso = await axios.post(import.meta.env.VITE_APP_BACKEND_AGG+"/vote", {
             publicKey,
             arr: stringifyedArr,
             signature: serializedSignature

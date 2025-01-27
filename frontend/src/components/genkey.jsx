@@ -6,9 +6,9 @@ export default function GenKey() {
         publicKey: "",
         privateKey: ""
     });
-
+    console.log(import.meta.env.VITE_APP_BACKEND_KEYGEN);
     const generateAccount = async () => {
-        axios.post("https://localhost:3443/generate",{}, {
+        axios.get( import.meta.env.VITE_APP_BACKEND_KEYGEN +"/generate",{}, {
             headers: {
                 "Content-Type": "application/json"
             }

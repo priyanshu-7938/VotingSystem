@@ -97,7 +97,7 @@ app.post('/vote', (req, res) => {
   return;
 });
 
-app.post('/generate', (req, res) => {
+app.get('/generate', (req, res) => {
   let privateKey = secp.utils.randomPrivateKey();
   let publicKey = secp.getPublicKey(privateKey);
   res.json({ privateKey, publicKey });
@@ -173,7 +173,7 @@ const sslServer = https.createServer(
 );
 
 sslServer.listen(3443, () => {
-  console.log("Secure voting app is running on https://localhost:3443");
+  console.log("Secure voting app is running on import.meta.env.VITE_APP_BACKEND_AGG");
 });
 
 
